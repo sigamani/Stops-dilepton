@@ -30,7 +30,23 @@
 
 using namespace TMVA;
 
-void TMVAClassificationApplication( TString myMethodList = "" ) 
+
+
+double calcSoSqrtB(double S, double B){
+
+if (B < 1) B = 1;
+
+      if (S >= 3)
+         return S / sqrt(S + B);
+      else
+
+    return 0.;
+}
+
+
+
+
+void TMVAClassificationApplication( TString myMethodList = "" , TString decay_mode) 
 {   
 #ifdef __CINT__
    gROOT->ProcessLine( ".O0" ); // turn off optimization in CINT
@@ -226,26 +242,31 @@ void TMVAClassificationApplication( TString myMethodList = "" )
       rarityHistFi = new TH1F( "MVA_Fisher_Rarity", "MVA_Fisher_Rarity", nbin, 0, 1 );
    }
 
-   // Prepare input tree (this must be replaced by your data source)
 
-   TString fname  = "Example_Rootfiles/t2tt_all/R4/output/t2tt_all_R4.root";
+
+   TString fname; 
+   Double_t event_weight; // events weights are: xsection * efficiency (preselection)
+
+   if (decay_mode == "TT_1Lep") {fname  = "Example_Rootfiles/ttbar_1l/output/ttbar_1l.root"; 		event_weight = 0.153;}
+   if (decay_mode == "TT_2Lep") {fname  = "Example_Rootfiles/ttbar_2l/output/ttbar_2l.root"; 		event_weight = 0.129;}
+   if (decay_mode == "WJets")   {fname  = "Example_Rootfiles/wjets_all/output/wjets_all.root"; 		event_weight = 0.67;}  
+   if (decay_mode == "Others")  {fname  = "Example_Rootfiles/others_all/output/others_all.root"; 	event_weight = 0.106;}
+
+   if (decay_mode == "T2tt_R1") { fname  = "Example_Rootfiles/t2tt_all/R1/output/t2tt_all_R1.root"; 	event_weight = 1592./24845.;}
+   if (decay_mode == "T2tt_R2") { fname  = "Example_Rootfiles/t2tt_all/R2/output/t2tt_all_R2.root"; 	event_weight = 1018./24994.;}
+   if (decay_mode == "T2tt_R3") { fname  = "Example_Rootfiles/t2tt_all/R3/output/t2tt_all_R3.root"; 	event_weight = 306./25006.;}
+   if (decay_mode == "T2tt_R4") { fname  = "Example_Rootfiles/t2tt_all/R4/output/t2tt_all_R4.root"; 	event_weight = 87./25094.;}
+   if (decay_mode == "T2tt_R5") { fname  = "Example_Rootfiles/t2tt_all/R5/output/t2tt_all_R5.root"; 	event_weight = 28./25075.;}
+   if (decay_mode == "T2tt_R6") { fname  = "Example_Rootfiles/t2tt_all/R6/output/t2tt_all_R6.root"; 	event_weight = 9./24863.;}
+
 
 
    TFile *input = TFile::Open( fname );
 
 
-/*   if (!gSystem->AccessPathName( fname )) 
-      input = TFile::Open( fname ); // check if file in local directory exists
-   else    
-      input = TFile::Open( "http://root.cern.ch/files/tmva_class_example.root" ); // if not: download from ROOT server
-   
-   if (!input) {
-      std::cout << "ERROR: could not open data file" << std::endl;
-      exit(1);
-   }*/
    std::cout << "--- TMVAClassification       : Using input file: " << input->GetName() << std::endl;
    
-   // --- Event loop
+   // --- //Event loop
 
    // Prepare the event tree
    // - here the variable names have to corresponds to your tree
@@ -271,10 +292,15 @@ void TMVAClassificationApplication( TString myMethodList = "" )
 
    std::vector<Float_t> vecVar(4); // vector for EvaluateMVA tests
 
-   std::cout << "--- Processing: " << theTree->GetEntries() << " events" << std::endl;
+   Int_t totevt;
+
+    if (string(decay_mode).find("T2tt") != std::string::npos) totevt = 50000;  // Takes too long (for exercise) to run over all the signal events 
+    else totevt = theTree->GetEntries();
+ 
+   std::cout << "--- Processing: " << totevt << " events" << std::endl;
    TStopwatch sw;
    sw.Start();
-   for (Long64_t ievt=0; ievt<theTree->GetEntries();ievt++) {
+   for (Long64_t ievt=0; ievt<totevt; ievt++) {
 
       theTree->GetEntry(ievt);
       if (ievt%1000 == 0) std::cout << "--- ... Processing event: " << ievt << std::endl;
@@ -284,6 +310,7 @@ void TMVAClassificationApplication( TString myMethodList = "" )
     
  
       // --- Return the MVA outputs and fill into histograms
+
       // this gives you the mva value per event 
       // cout << reader->EvaluateMVA("BDT method") << endl;
 
@@ -312,7 +339,8 @@ void TMVAClassificationApplication( TString myMethodList = "" )
       if (Use["MLPBNN"       ])   histNnbnn  ->Fill( reader->EvaluateMVA( "MLPBNN method"        ) );
       if (Use["CFMlpANN"     ])   histNnC    ->Fill( reader->EvaluateMVA( "CFMlpANN method"      ) );
       if (Use["TMlpANN"      ])   histNnT    ->Fill( reader->EvaluateMVA( "TMlpANN method"       ) );
-      if (Use["BDT"          ])   histBdt    ->Fill( reader->EvaluateMVA( "BDT method"           ) );
+      if (Use["BDT"          ])   histBdt    ->Fill( reader->EvaluateMVA( "BDT method"           ), event_weight ); 
+      //if (Use["BDT"          ])   histBdt    ->Fill( reader->EvaluateMVA( "BDT method"           )); 
       if (Use["BDTD"         ])   histBdtD   ->Fill( reader->EvaluateMVA( "BDTD method"          ) );
       if (Use["BDTG"         ])   histBdtG   ->Fill( reader->EvaluateMVA( "BDTG method"          ) );
       if (Use["RuleFit"      ])   histRf     ->Fill( reader->EvaluateMVA( "RuleFit method"       ) );
@@ -374,7 +402,7 @@ void TMVAClassificationApplication( TString myMethodList = "" )
 
    // --- Write histograms
 
-   TFile *target  = new TFile( "TMVApp.root","RECREATE" );
+   TFile *target  = new TFile( "results_"+decay_mode+".root","RECREATE" );
    if (Use["Likelihood"   ])   histLk     ->Write();
    if (Use["LikelihoodD"  ])   histLkD    ->Write();
    if (Use["LikelihoodPCA"])   histLkPCA  ->Write();
@@ -413,7 +441,7 @@ void TMVAClassificationApplication( TString myMethodList = "" )
    if (Use["Fisher"]) { if (probHistFi != 0) probHistFi->Write(); if (rarityHistFi != 0) rarityHistFi->Write(); }
    target->Close();
 
-   std::cout << "--- Created root file: \"TMVApp.root\" containing the MVA output histograms" << std::endl;
+   std::cout << "--- Created root file: \"results_"+decay_mode+".root\" containing the MVA output histograms" << std::endl;
   
    delete reader;
     

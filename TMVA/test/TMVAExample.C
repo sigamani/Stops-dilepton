@@ -48,7 +48,7 @@
 #include "TMVA/Tools.h"
 #endif
 
-void TMVAExample( TString myMethodList = "" )
+void TMVAExample( TString myMethodList = "" ,  TString decay_mode)
 {
    // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
    // if you use your private .rootrc, or run from a different directory, please copy the
@@ -92,6 +92,7 @@ void TMVAExample( TString myMethodList = "" )
    // 
    // --- Friedman's RuleFit method, ie, an optimised series of cuts ("rules")
    Use["RuleFit"]         = 1;
+   Use["MLP"]         = 1;
    // ---------------------------------------------------------------
 
    std::cout << std::endl;
@@ -170,17 +171,25 @@ factory->AddVariable("lsp_mass",'F');
 
 
 
-   // You can add so-called "Spectator variables", which are not used in the MVA training,
-   // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
-   // input variables, the response values of all trained MVAs, and the spectator variables
-   //factory->AddSpectator( "Q80",  "Spectator 1", "units", 'F' );
-   //factory->AddSpectator( "HT20",  "Spectator 2", "units", 'F' );
-
    // Read training and test data
    // (it is also possible to use ASCII format as input -> see TMVA Users Guide)
-   TString fnamesignal 	= "Example_Rootfiles/t2tt_all/R4/output/t2tt_all_R4.root";
+   TString fnamesignal; 
+
+   if (decay_mode == "T2tt_R1") { fnamesignal  = "Example_Rootfiles/t2tt_all/R1/output/t2tt_all_R1.root"; }
+   if (decay_mode == "T2tt_R2") { fnamesignal  = "Example_Rootfiles/t2tt_all/R2/output/t2tt_all_R2.root"; }
+   if (decay_mode == "T2tt_R3") { fnamesignal  = "Example_Rootfiles/t2tt_all/R3/output/t2tt_all_R3.root"; }
+   if (decay_mode == "T2tt_R4") { fnamesignal  = "Example_Rootfiles/t2tt_all/R4/output/t2tt_all_R4.root"; }
+   if (decay_mode == "T2tt_R5") { fnamesignal  = "Example_Rootfiles/t2tt_all/R5/output/t2tt_all_R5.root"; }
+   if (decay_mode == "T2tt_R6") { fnamesignal  = "Example_Rootfiles/t2tt_all/R6/output/t2tt_all_R6.root"; }
+
+
+
    TString fnamebkg		="Example_Rootfiles/ttbar_1l/output/ttbar_1l.root";
    TString fnamebkg2	="Example_Rootfiles/ttbar_2l/output/ttbar_2l.root";
+
+
+
+
 
    //if (gSystem->AccessPathName( fname ))  // file does not exist in local directory
 //      gSystem->Exec("wget http://root.cern.ch/files/tmva_class_example.root");
@@ -199,7 +208,7 @@ factory->AddVariable("lsp_mass",'F');
    TTree *background2 = (TTree*)inputbkg2->Get("BDTtree");
    
    // global event weights per tree (see below for setting event-wise weights)
-   Double_t signalWeight     = 1.0;
+   Double_t signalWeight     = 1.;
    Double_t backgroundWeight = 0.55;
    Double_t backgroundWeight2 = 0.45;
    
@@ -222,7 +231,7 @@ factory->AddVariable("lsp_mass",'F');
    //    factory->PrepareTrainingAndTestTree( mycut,
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
+                                       "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
 
    // ---- Book MVA methods
    //
@@ -378,12 +387,11 @@ factory->AddVariable("lsp_mass",'F');
    // Boosted Decision Trees
    if (Use["BDTG"]) // Gradient Boost
       factory->BookMethod( TMVA::Types::kBDT, "BDTG",
-                           "!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
+                           "!H:!V:NTrees=1000:nEventsMin=MinNodeSize:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
 
    if (Use["BDT"])  // Adaptive Boost
       factory->BookMethod( TMVA::Types::kBDT, "BDT",
-                           //"!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-						   "!H:!V:NTrees=400:nEventsMin=400:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=NoPruning");	
+						   "!H:!V:NTrees=1000:nEventsMin=MinNodeSize:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:SeparationType=GiniIndex");	
    if (Use["BDTB"]) // Bagging
       factory->BookMethod( TMVA::Types::kBDT, "BDTB",
                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );

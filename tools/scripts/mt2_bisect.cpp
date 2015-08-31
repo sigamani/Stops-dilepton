@@ -1,15 +1,15 @@
-/***********************************************************************************************************************/
-/*                                                                                                                     */
-/*              Finding mt2 by Bisection                                                                               */
-/*              http://www.hep.phy.cam.ac.uk/~lester/dtm662/mt2/Releases/oxbridgekinetics-0.6/src/mt2_bisect.cpp       */
-/*              Authors: Hsin-Chia Cheng, Zhenyu Han                                                                   */ 
-/*              Dec 11, 2008, v1.01a                                                                                   */
-/*                                                                                                                     */  
-/***********************************************************************************************************************/
+/***********************************************************************/
+/*                                                                     */
+/*              Finding mt2 by Bisection                               */
+/*                                                                     */
+/*              Authors: Hsin-Chia Cheng, Zhenyu Han                   */ 
+/*              Dec 11, 2008, v1.01a                                     */
+/*                                                                     */  
+/***********************************************************************/
 
 
 /*******************************************************************************
-  Usage:  
+  Usage: 
 
   1. Define an object of type "mt2":
      
@@ -34,12 +34,10 @@
 #include <math.h>
 #include "mt2_bisect.h"
 
-ClassImp(mt2);
-
 using namespace std;
 
-//namespace mt2_bisect
-//{
+namespace mt2_bisect
+{
 mt2::mt2()
 {
    solved = false;
@@ -226,7 +224,7 @@ void mt2::mt2_massless()
       maxmass  = sqrt(mnsq + Deltasq_high);
       for(double mass = minmass + SCANSTEP; mass < maxmass; mass += SCANSTEP)
       {
-   Deltasq_high = mass*mass - mnsq;
+	 Deltasq_high = mass*mass - mnsq;
       
          nsols_high = nsols_massless(Deltasq_high);
          if(nsols_high>0)
@@ -239,7 +237,7 @@ void mt2::mt2_massless()
       if(foundhigh==0) 
       {
        
-  cout<<"Deltasq_high not found at event " << nevt <<endl;
+	cout<<"Deltasq_high not found at event " << nevt <<endl;
         
        
          mt2_b = (double)sqrt(Deltasq_low+mnsq);
@@ -458,7 +456,7 @@ void mt2::mt2_bisect()
       foundhigh = find_high(Deltasq_high);
       if(foundhigh == 0) 
       {
-   cout << "Deltasq_high not found at event " << nevt << endl;
+ 	 cout << "Deltasq_high not found at event " << nevt << endl;
          mt2_b = sqrt( Deltasq_low + mnsq );
          return;
       }
@@ -546,7 +544,7 @@ int mt2::scan_high(double & Deltasq_high)
       
       if( nsols_high > 0)
       {
-   Deltasq_low = (mass-SCANSTEP)*(mass-SCANSTEP) - mnsq;
+	 Deltasq_low = (mass-SCANSTEP)*(mass-SCANSTEP) - mnsq;
          foundhigh   = 1;
          break;
       }
@@ -666,4 +664,4 @@ inline int mt2::signchange_p( long double t1, long double t2, long double t3, lo
    return nsc;
 }
 
-//}//end namespace mt2_bisect
+}//end namespace mt2_bisect
